@@ -1,6 +1,7 @@
 import PySimpleGUI as sg
 import requests
 import os
+import re
 import subprocess
 import tldextract
 from bs4 import BeautifulSoup
@@ -17,7 +18,7 @@ import main
 mainDir = os.getcwd()
 
 sg.ChangeLookAndFeel('Black')
-main_form = sg.FlexForm('Scraping the Web', default_element_size=(40, 1))
+main_form = sg.FlexForm('ScrapeBox', default_element_size=(40, 1))
 
 layout = [
     # [sg.Text("Web Scraper", size=(30, 1), font=("Times", 20))],
@@ -29,7 +30,9 @@ layout = [
     # ],
     [sg.Submit("Generate Sitemap", size=(20, 2), font=("Times", 20)),
      sg.Submit("Scrape", size=(20, 2), font=("Times", 20))
-    ]
+    ],
+    [sg.Submit("Scrape Sitemap", size=(41, 1), font=("Times", 20))],
+    [sg.Text('_' * 89)],
 ]
 
 main_form = main_form.Layout(layout)
@@ -67,7 +70,13 @@ while True:
         # write to file
     elif button == 'Generate Sitemap':
         outputName = values[0].split("https://", 1)[1].replace('/', '_') + '.txt'
-        outputName = 'test.txt'
         sitemap = main.main(values[0], outputName)
         sitemap.main()
+        oldFile = open(outputName, 'r')
+        cleanText = BeautifulSoup(oldFile.read(), 'lxml').text
+        oldFile.close()
+        os.remove(outputName)
+        cleanFile = open(outputName, 'w')
+        cleanFile.write(cleanText)
+        cleanFile.close()
         break
