@@ -33,8 +33,17 @@ layout = [
     [sg.Submit("Generate Sitemap", size=(20, 2), font=("Times", 20)),
      sg.Submit("Scrape", size=(20, 2), font=("Times", 20))
     ],
-    [sg.Submit("Scrape Sitemap", size=(41, 1), font=("Times", 20))],
+    [sg.Submit("Scrape a Sitemap", size=(41, 1), font=("Times", 20))],
     [sg.Text('_' * 89)],
+    [sg.Text('Choose HTML Tag', size=(20, 1), font=("Times", 20)),
+     # sg.Text('Choose Content Type', size=(20, 1), font=("Times", 20))
+     ],
+    [sg.InputCombo(('All', '<a>', '<b>', '<button>', '<div>', '<form>', '<h1>', '<img>',
+                   '<input>', '<li>', '<meta>', '<p>', '<script>', '<select>', '<style>', '<table>',
+                   '<tbody>', '<td>', '<textarea>', '<th>', '<thead>', '<ul>'),
+                   size=(40, 1), font=("Times", 20)),
+     # sg.InputCombo(('Text', 'Image'), size=(20, 1), font=("Times", 20))
+    ]
 ]
 
 main_form = main_form.Layout(layout)
@@ -47,31 +56,21 @@ while True:
     if button == 'Scrape':
         # check if save destination is empty
         file_destination = sg.PopupGetFolder("Enter Destination")
-        try:
-            text = single_scrape(values[0])
-            # webpage = requests.get(values[0])
-            # soup = BeautifulSoup(webpage.content, 'html.parser')
-        except:
-            sg.Popup(button, "Error, could not download page")
-            continue
-
-        # text = soup.get_text()
-        os.chdir(file_destination)
-        # remove https:// and replace / with _ so it can write file
-        # outputName = values[0].split("https://", 1)[1].replace('/', '_') + '.scrape'
-        # domain_name = tldextract.extract(values[0])
-        sg.Popup("File Added")
+        page = values[0]
+        tag = values[1]
+        # type = values[-1]
         # try:
-        #     file = open(outputName, "w")
+        text = single_scrape(page, tag)
         # except:
-        #     sg.Popup("Couldn't create file. Please ensure duplicate filename does not exist")
+        #     sg.Popup(button, "Error, could not download page")
         #     continue
-        # file.write(text)
-        # file.close()
+        os.chdir(file_destination)
+        sg.Popup("File Added")
         os.chdir(mainDir)
 
-        # write to file
+    # write to file
     elif button == 'Generate Sitemap':
+        sg.Popup("This may take a minute...")
         outputName = values[0].split("https://", 1)[1].replace('/', '_') + '.smap'
         sitemap = main.main(values[0], outputName)
         sitemap.main()
@@ -87,10 +86,13 @@ while True:
         cleanFile = open(outputName, 'w')
         cleanFile.write(cleanText)
         cleanFile.close()
+        sg.Popup("Sitemap Generated!")
 
-    elif button == 'Scrape Sitemap':
+    elif button == 'Scrape a Sitemap':
         sitemapName = sg.PopupGetFile('Choose Sitemap')
         sitemap = open(sitemapName, 'r').readlines()
+        page = values[0]
+        tag = values[1]
         dest_folder = sg.PopupGetFolder('Choose Destination Folder')
         os.chdir(dest_folder)
         domain_name = tldextract.extract(sitemap[0])
@@ -98,9 +100,12 @@ while True:
         if not os.path.isdir(domain_name + "_scrapes"):
             os.makedirs(domain_name + "_scrapes")
         os.chdir(domain_name + "_scrapes")
+        count = 0
         for page in sitemap:
+            count = count + 1
+            sg.OneLineProgressMeter('Progress...', count, 10000, 'key')
             try:
-                text = single_scrape(page)
+                text = single_scrape(page, tag)
             except:
                 sg.Popup(button, "Error, could not download page \"" + page + "\"")
                 continue
